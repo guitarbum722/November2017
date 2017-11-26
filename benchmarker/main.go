@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"net"
+	"os"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -14,7 +15,7 @@ import (
 var (
 	outNum uint64
 	inNum  uint64
-	stop   uint64
+	stop   chan struct{}
 )
 
 var letterRunes = []rune("0123456789")
@@ -35,8 +36,14 @@ func main() {
 		pins1[i] = genIntString(10) + "\n"
 	}
 	go func() {
-		time.Sleep(time.Second * 10)
-		atomic.StoreUint64(&stop, 1)
+		time.Sleep(time.Second * 20)
+		fmt.Println("Benchmarking:", "localhost:3280")
+		fmt.Println(6, "clients, running", 10, "bytes,", 20, "sec.")
+		fmt.Println("Speed:", outNum/uint64(20), "request/sec,", inNum/uint64(20), "response/sec")
+		fmt.Println("Requests:", outNum)
+		fmt.Println("Responses:", inNum)
+
+		os.Exit(0)
 	}()
 
 	var wg sync.WaitGroup
@@ -50,7 +57,7 @@ func main() {
 					_, err := conn.Write([]byte(i))
 					atomic.AddUint64(&outNum, 1)
 					if err != nil {
-						log.Println(err)
+						log.Println("wow : ", err)
 						break
 					}
 					atomic.AddUint64(&inNum, 1)
@@ -61,10 +68,4 @@ func main() {
 		}(&wg)
 	}
 	wg.Wait()
-
-	fmt.Println("Benchmarking:", "localhost:3280")
-	fmt.Println(6, "clients, running", 10, "bytes,", 10, "sec.")
-	fmt.Println("Speed:", outNum/uint64(10), "request/sec,", inNum/uint64(10), "response/sec")
-	fmt.Println("Requests:", outNum)
-	fmt.Println("Responses:", inNum)
 }
